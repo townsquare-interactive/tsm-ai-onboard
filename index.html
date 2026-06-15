@@ -308,9 +308,39 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 .warn-flash{animation:warnPulse 0.6s ease 2}
 .gate-hint{font-size:11px;color:transparent;margin-top:8px;text-align:right;letter-spacing:0.5px;min-height:14px;transition:color 0.25s}
 .gate-hint.show{color:var(--orange)}
+
+/* ── PASSWORD GATE ── */
+#pw-gate{position:fixed;inset:0;background:#000;z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column}
+#pw-gate.gone{display:none}
+.pw-gem{width:36px;height:36px;position:relative;margin-bottom:28px}
+.pw-gem .gt{position:absolute;width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-bottom:16px solid #f0581e}
+.pw-gem .gl{position:absolute;top:16px;width:0;height:0;border-top:16px solid transparent;border-bottom:19px solid #22b8b0;border-right:18px solid transparent;border-left:0}
+.pw-gem .gr{position:absolute;top:16px;left:18px;width:0;height:0;border-top:16px solid transparent;border-bottom:19px solid #8854d8;border-left:18px solid transparent;border-right:0}
+.pw-title{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:28px;text-transform:uppercase;color:#fff;letter-spacing:0.5px;margin-bottom:6px}
+.pw-sub{font-size:12px;color:#555;letter-spacing:2px;text-transform:uppercase;margin-bottom:32px}
+.pw-row{display:flex;gap:0;width:300px}
+#pw-input{flex:1;background:#0f0f0f;border:1px solid #1e1e1e;border-right:none;color:#f2f2f2;font-family:'DM Sans',sans-serif;font-size:14px;padding:12px 16px;outline:none}
+#pw-input:focus{border-color:#f0581e}
+#pw-input::placeholder{color:#333}
+#pw-submit{background:#f0581e;border:none;color:#fff;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;padding:12px 18px;cursor:pointer}
+#pw-submit:hover{background:#d94810}
+.pw-err{font-size:12px;color:#e03030;margin-top:10px;min-height:16px;letter-spacing:0.5px}
+
 </style>
 </head>
 <body>
+<!-- PASSWORD GATE -->
+<div id="pw-gate">
+  <div class="pw-gem"><div class="gt"></div><div class="gl"></div><div class="gr"></div></div>
+  <div class="pw-title">Townsquare Media</div>
+  <div class="pw-sub">AI Orientation — Employee Access</div>
+  <div class="pw-row">
+    <input id="pw-input" type="password" placeholder="Enter access code" autocomplete="off" onkeydown="if(event.key==='Enter')pwCheck()">
+    <button id="pw-submit" onclick="pwCheck()">Enter</button>
+  </div>
+  <div class="pw-err" id="pw-err"></div>
+</div>
+
 
 <!-- HEADER -->
 <header class="hdr">
@@ -1037,6 +1067,29 @@ function safePrint(){
     return;
   }
   window.print();
+}
+
+
+// ── PASSWORD GATE ──
+(function(){
+  var PW='tsmai2026';
+  if(sessionStorage.getItem('tsm_gate')==='1'){
+    document.getElementById('pw-gate').classList.add('gone');
+    return;
+  }
+})();
+function pwCheck(){
+  var v=document.getElementById('pw-input').value;
+  if(v==='tsmai2026'){
+    sessionStorage.setItem('tsm_gate','1');
+    document.getElementById('pw-gate').classList.add('gone');
+  } else {
+    var e=document.getElementById('pw-err');
+    e.textContent='Incorrect access code.';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+    setTimeout(()=>e.textContent='',2500);
+  }
 }
 
 </script>
