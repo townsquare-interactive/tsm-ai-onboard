@@ -1072,7 +1072,7 @@ function safePrint(){
 
 // ── PASSWORD GATE ──
 (function(){
-  var PW='tsmai2026';
+  var PW='TownSq!26#ai';
   if(sessionStorage.getItem('tsm_gate')==='1'){
     document.getElementById('pw-gate').classList.add('gone');
     return;
@@ -1080,7 +1080,7 @@ function safePrint(){
 })();
 function pwCheck(){
   var v=document.getElementById('pw-input').value;
-  if(v==='tsmai2026'){
+  if(v==='TownSq!26#ai'){
     sessionStorage.setItem('tsm_gate','1');
     document.getElementById('pw-gate').classList.add('gone');
   } else {
