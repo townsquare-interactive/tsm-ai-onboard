@@ -326,6 +326,18 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
 #pw-submit:hover{background:#d94810}
 .pw-err{font-size:12px;color:#e03030;margin-top:10px;min-height:16px;letter-spacing:0.5px}
 
+
+/* ── ACK CONFIRM ── */
+.ack-submit-row{margin-top:12px;text-align:center}
+.btn-ack-submit{background:var(--s1);border:1px solid var(--border2);color:var(--muted);font-family:var(--font-body);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:2px;padding:12px 28px;cursor:default;transition:all 0.2s;width:100%}
+.btn-ack-submit.ready{background:var(--teal);border-color:var(--teal);color:#000;cursor:pointer}
+.btn-ack-submit.ready:hover{background:#1a9890}
+.btn-ack-submit.submitted{background:var(--teal-bg);border-color:var(--teal);color:var(--teal);cursor:default}
+.ack-confirmed{display:none;background:var(--teal-bg);border:1px solid rgba(34,184,176,0.25);padding:16px 20px;margin:14px 0;text-align:center}
+.ack-confirmed.visible{display:block}
+.ack-confirmed-title{font-family:var(--font-display);font-weight:900;font-size:22px;text-transform:uppercase;color:var(--teal);margin-bottom:4px}
+.ack-confirmed-sub{font-size:12px;color:var(--sub)}
+
 </style>
 </head>
 <body>
@@ -819,9 +831,17 @@ body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-si
     <div class="record-row"><span class="rec-key">Sections completed</span><span class="rec-val">6 of 6</span></div>
   </div>
 
-  <div class="ack-wrap" onclick="toggleAck()">
-    <input type="checkbox" id="ackBox">
+  <div class="ack-wrap" id="ackWrap">
+    <input type="checkbox" id="ackBox" onchange="ackChanged()">
     <label for="ackBox">I have completed the AI orientation and understand the company's AI Use Policy — including the tool tiers, data restrictions, red-line categories, and my responsibilities when using AI tools at Townsquare.</label>
+  </div>
+  <div class="ack-submit-row">
+    <button class="btn-ack-submit" id="ackSubmitBtn" onclick="submitAck()" disabled>Submit acknowledgment</button>
+  </div>
+
+  <div class="ack-confirmed" id="ackConfirmed">
+    <div class="ack-confirmed-title">Acknowledgment recorded ✓</div>
+    <div class="ack-confirmed-sub" id="ackTimestamp"></div>
   </div>
 
   <div class="contact-block">
@@ -1007,13 +1027,46 @@ function copyTri(panelId,el){
 // Completion
 function fillRecord(){
   const now=new Date();
-  document.getElementById('rName').textContent=uName||'Not provided';
-  document.getElementById('rTeam').textContent=uTeam||'Not provided';
+  // Read directly from inputs — don't rely on variables which may be stale
+  const name=document.getElementById('iName').value.trim();
+  const team=document.getElementById('iTeam').value;
+  uName=name; uTeam=team;
+  document.getElementById('rName').textContent=name||'Not provided';
+  document.getElementById('rTeam').textContent=team||'Not provided';
   document.getElementById('rDate').textContent=now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
-  try{ localStorage.setItem('tsm_onboard_v1',JSON.stringify({name:uName,team:uTeam,date:now.toISOString(),done:true})); }catch(e){}
+  try{ localStorage.setItem('tsm_onboard_v1',JSON.stringify({name,team,date:now.toISOString(),done:true})); }catch(e){}
 }
 
-function toggleAck(){ const b=document.getElementById('ackBox'); b.checked=!b.checked; }
+function toggleAck(){ const b=document.getElementById('ackBox'); b.checked=!b.checked; ackChanged(); }
+function ackChanged(){
+  const checked=document.getElementById('ackBox').checked;
+  const btn=document.getElementById('ackSubmitBtn');
+  btn.disabled=!checked;
+  btn.classList.toggle('ready',checked);
+}
+let ackSubmitted=false;
+function submitAck(){
+  if(!document.getElementById('ackBox').checked) return;
+  ackSubmitted=true;
+  const btn=document.getElementById('ackSubmitBtn');
+  btn.textContent='Acknowledgment submitted ✓';
+  btn.classList.remove('ready');
+  btn.classList.add('submitted');
+  btn.disabled=true;
+  document.getElementById('ackBox').disabled=true;
+  const confirmed=document.getElementById('ackConfirmed');
+  confirmed.classList.add('visible');
+  const now=new Date();
+  document.getElementById('ackTimestamp').textContent=
+    'Submitted '+now.toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+
+    ' at '+now.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+  // Update record table
+  try{
+    const s=JSON.parse(localStorage.getItem('tsm_onboard_v1')||'{}');
+    s.acknowledged=true; s.ackDate=now.toISOString();
+    localStorage.setItem('tsm_onboard_v1',JSON.stringify(s));
+  }catch(e){}
+}
 
 // Restore
 try{
@@ -1061,9 +1114,9 @@ function showGateHint(id,msg){
 }
 
 function safePrint(){
-  if(!document.getElementById('ackBox').checked){
+  if(!ackSubmitted){
     flashEl(document.querySelector('.ack-wrap'));
-    showGateHint('s6hint','Check the acknowledgment box to finalize your record');
+    showGateHint('s6hint','Submit your acknowledgment above before printing');
     return;
   }
   window.print();
